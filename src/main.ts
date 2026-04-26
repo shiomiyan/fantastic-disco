@@ -4,7 +4,7 @@ import {pushCurrentNote, summarizeSuccess, notifyWarnings} from "./push";
 import {BlogPushSettings} from "./types";
 
 export default class BlogPushPlugin extends Plugin {
-	settings: BlogPushSettings;
+	settings!: BlogPushSettings;
 	private statusBarItemEl: HTMLElement | null = null;
 	private isPushing = false;
 
