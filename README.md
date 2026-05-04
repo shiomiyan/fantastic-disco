@@ -36,10 +36,12 @@ The pushed Markdown frontmatter keeps only the keys required by the blog schema.
 
 ## Commands
 
-- **Push current note to blog**
-- **Dry run push current note to blog**
+Use these commands from the Obsidian command palette:
 
-Dry run validates the note, resolves images, checks the GitHub branch and existing post ID, and reports what would change without creating a commit.
+| Command | ID | Description |
+| --- | --- | --- |
+| **Push current note to blog** | `push-current-note-to-blog` | Validate the active Markdown note, resolve images, and push the post to the configured GitHub repository. |
+| **Dry run push current note to blog** | `dry-run-push-current-note-to-blog` | Validate the active Markdown note, resolve images, check the GitHub branch and existing post ID, and report what would change without creating a commit. |
 
 ## Images
 
