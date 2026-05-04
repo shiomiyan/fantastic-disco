@@ -1,0 +1,74 @@
+name: Release
+
+on:
+    push:
+        branches: [master]
+
+concurrency:
+    group: release-master
+    cancel-in-progress: false
+
+jobs:
+    release:
+        if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: write
+
+        steps:
+            - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+              with:
+                  fetch-depth: 0
+
+            - uses: pnpm/action-setup@8912a9102ac27614460f54aedde9e1e7f9aec20d # v6.0.5
+
+            - name: Use Node.js 24.x
+              uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+              with:
+                  node-version: 24.x
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm run build
+            - run: pnpm run lint
+
+            - name: Configure git
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git config commit.gpgsign false
+
+            - name: Bump patch version
+              run: |
+                  pnpm version patch --no-git-tag-version
+                  node version-bump.mjs
+                  git add package.json manifest.json versions.json
+
+            - name: Read release version
+              id: version
+              run: node -e 'console.log("version=" + require("./package.json").version)' >> "$GITHUB_OUTPUT"
+
+            - name: Commit version bump
+              run: |
+                  git commit -m "chore(release): ${{ steps.version.outputs.version }}"
+                  git push origin HEAD:master
+
+            - name: Build release artifacts
+              run: pnpm run build
+
+            - name: Create tag
+              run: |
+                  git tag "${{ steps.version.outputs.version }}"
+                  git push origin "${{ steps.version.outputs.version }}"
+
+            - name: Create GitHub release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  RELEASE_BODY: ${{ github.event.head_commit.message }}
+              run: |
+                  printf '%s\n' "$RELEASE_BODY" > release-notes.md
+                  gh release create "${{ steps.version.outputs.version }}" \
+                      manifest.json main.js styles.css \
+                      --title "${{ steps.version.outputs.version }}" \
+                      --notes-file release-notes.md
