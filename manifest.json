@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-blog-push",
 	"name": "Blog Push",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"minAppVersion": "1.11.4",
 	"description": "Push the current Obsidian note to a GitHub-backed Astro blog branch.",
 	"author": "shiomiyan",
