@@ -1,4 +1,5 @@
-import {Notice, Plugin} from "obsidian";
+import {MarkdownView, Notice, Plugin, TFile} from "obsidian";
+import {fillPostMetadata} from "./frontmatter";
 import {BlogPushSettingTab, DEFAULT_SETTINGS} from "./settings";
 import {pushCurrentNote, summarizeSuccess, notifyWarnings} from "./push";
 import {BlogPushSettings} from "./types";
@@ -12,6 +13,14 @@ export default class BlogPushPlugin extends Plugin {
 		await this.loadSettings();
 		this.statusBarItemEl = this.addStatusBarItem();
 		this.statusBarItemEl.hide();
+
+		this.addCommand({
+			id: "fill-current-note-blog-metadata",
+			name: "Fill current note blog ID and slug",
+			callback: () => {
+				void this.runFillMetadata();
+			},
+		});
 
 		this.addCommand({
 			id: "push-current-note-to-blog",
@@ -44,6 +53,29 @@ export default class BlogPushPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	private async runFillMetadata(): Promise<void> {
+		try {
+			const file = this.getActiveMarkdownFile("Open a Markdown note before filling blog metadata.");
+			const source = await this.app.vault.read(file);
+			const result = fillPostMetadata(source, file.basename);
+			if (!result.generatedId && !result.generatedSlug) {
+				new Notice("Blog ID and slug are already set.");
+				return;
+			}
+
+			await this.app.vault.modify(file, result.source);
+			const generated = [
+				result.generatedId ? "id" : null,
+				result.generatedSlug ? "slug" : null,
+			].filter((value): value is string => value !== null);
+			new Notice(`Filled blog ${generated.join(" and ")}.`);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			console.error("Blog metadata fill failed.", error);
+			new Notice(`Blog metadata fill failed: ${message}`, 10000);
+		}
+	}
+
 	private async runPush(dryRun: boolean): Promise<void> {
 		if (this.isPushing) {
 			new Notice("Blog push is already running.");
@@ -69,6 +101,15 @@ export default class BlogPushPlugin extends Plugin {
 			this.isPushing = false;
 			this.clearStatus();
 		}
+	}
+
+	private getActiveMarkdownFile(errorMessage: string): TFile {
+		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const file = view?.file;
+		if (!file || file.extension !== "md") {
+			throw new Error(errorMessage);
+		}
+		return file;
 	}
 
 	private setStatus(text: string): void {

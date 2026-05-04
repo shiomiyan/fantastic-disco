@@ -1,5 +1,5 @@
 import {App, MarkdownView, Notice, normalizePath, TFile} from "obsidian";
-import {parsePostContent, buildBlogMarkdown, ensurePostId} from "./frontmatter";
+import {parsePostContent, buildBlogMarkdown} from "./frontmatter";
 import {GitHubClient} from "./github";
 import {prepareMarkdownBody} from "./markdown";
 import {BlogPushSettings, PreparedPost, PushSummary} from "./types";
@@ -16,13 +16,7 @@ export async function pushCurrentNote(
 	dryRun: boolean,
 ): Promise<PushSummary> {
 	const file = getActiveMarkdownFile(app);
-	let source = await app.vault.read(file);
-	const idResult = ensurePostId(source);
-	if (idResult.generatedId) {
-		source = idResult.source;
-		await app.vault.modify(file, source);
-		new Notice(`Generated blog post id: ${idResult.generatedId}`);
-	}
+	const source = await app.vault.read(file);
 	const post = parsePostContent(source);
 	const postDirectory = normalizePath(`${settings.postsDirectory}/${post.frontmatter.slug}`);
 	const indexPath = `${postDirectory}/index.md`;

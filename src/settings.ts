@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: BlogPushSettings = {
 	owner: "shiomiyan",
 	repo: "blog",
 	pushBranch: "obsidian",
-	baseBranch: "main",
+	baseBranch: "master",
 	postsDirectory: "src/content/posts",
 };
 

@@ -40,8 +40,11 @@ Use these commands from the Obsidian command palette:
 
 | Command | ID | Description |
 | --- | --- | --- |
+| **Fill current note blog ID and slug** | `fill-current-note-blog-metadata` | Add missing or empty `id` and `slug` fields to the active Markdown note. |
 | **Push current note to blog** | `push-current-note-to-blog` | Validate the active Markdown note, resolve images, and push the post to the configured GitHub repository. |
 | **Dry run push current note to blog** | `dry-run-push-current-note-to-blog` | Validate the active Markdown note, resolve images, check the GitHub branch and existing post ID, and report what would change without creating a commit. |
+
+The fill command keeps existing values. It generates `id` as a UUID and generates `slug` from `created` as `YYYYMMDD-HHmmss` when possible, falling back to the note name.
 
 ## Images
 
