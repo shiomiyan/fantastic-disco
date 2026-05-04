@@ -1,8 +1,8 @@
-import {App, MarkdownView, Notice, normalizePath, TFile} from "obsidian";
-import {parsePostContent, buildBlogMarkdown} from "./frontmatter";
-import {GitHubClient} from "./github";
-import {prepareMarkdownBody} from "./markdown";
-import type {BlogPushSettings, PreparedPost, PushSummary} from "./types";
+import { App, MarkdownView, Notice, normalizePath, TFile } from "obsidian";
+import { parsePostContent, buildBlogMarkdown } from "../frontmatter";
+import { pushPostToGitHub } from "../github";
+import { prepareMarkdownBody } from "../markdown";
+import type { BlogPushSettings, PreparedPost, PushSummary } from "../types";
 
 export class BlogPushError extends Error {}
 
@@ -18,17 +18,10 @@ export async function pushCurrentNote(
 	const indexPath = `${postDirectory}/index.md`;
 	const preparedBody = await prepareMarkdownBody(app, file, post.body, postDirectory);
 	const markdown = buildBlogMarkdown(post, ensureTrailingNewline(preparedBody.body));
+	const { slug, ...frontmatter } = post.frontmatter;
 	const preparedPost: PreparedPost = {
-		frontmatter: {
-			title: post.frontmatter.title,
-			description: post.frontmatter.description,
-			created: post.frontmatter.created,
-			draft: post.frontmatter.draft,
-			id: post.frontmatter.id,
-			category: post.frontmatter.category,
-			tags: post.frontmatter.tags,
-		},
-		slug: post.frontmatter.slug,
+		frontmatter,
+		slug,
 		markdown: ensureTrailingNewline(markdown),
 		postDirectory,
 		indexPath,
@@ -36,8 +29,7 @@ export async function pushCurrentNote(
 	};
 
 	const token = await loadGitHubToken(app, settings.githubTokenSecret);
-	const client = new GitHubClient(settings, token);
-	return client.pushPost(preparedPost, dryRun);
+	return pushPostToGitHub(settings, token, preparedPost, dryRun);
 }
 
 export function summarizeSuccess(summary: PushSummary, branch: string): string {

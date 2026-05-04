@@ -1,5 +1,5 @@
-import {builtinModules} from "node:module";
-import {defineConfig} from "rolldown";
+import { builtinModules } from "node:module";
+import { defineConfig } from "rolldown";
 
 const production = process.env.BUILD === "production";
 const builtins = new Set([

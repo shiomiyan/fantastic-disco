@@ -38,11 +38,11 @@ The pushed Markdown frontmatter keeps only the keys required by the blog schema.
 
 Use these commands from the Obsidian command palette:
 
-| Command | ID | Description |
-| --- | --- | --- |
-| **Fill current note blog ID and slug** | `fill-current-note-blog-metadata` | Add missing or empty `id` and `slug` fields to the active Markdown note. |
-| **Push current note to blog** | `push-current-note-to-blog` | Validate the active Markdown note, resolve images, and push the post to the configured GitHub repository. |
-| **Dry run push current note to blog** | `dry-run-push-current-note-to-blog` | Validate the active Markdown note, resolve images, check the GitHub branch and existing post ID, and report what would change without creating a commit. |
+| Command                                | ID                                  | Description                                                                                                                                              |
+| -------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fill current note blog ID and slug** | `fill-current-note-blog-metadata`   | Add missing or empty `id` and `slug` fields to the active Markdown note.                                                                                 |
+| **Push current note to blog**          | `push-current-note-to-blog`         | Validate the active Markdown note, resolve images, and push the post to the configured GitHub repository.                                                |
+| **Dry run push current note to blog**  | `dry-run-push-current-note-to-blog` | Validate the active Markdown note, resolve images, check the GitHub branch and existing post ID, and report what would change without creating a commit. |
 
 The fill command keeps existing values. It generates `id` as a UUID and generates `slug` from `created` as `YYYYMMDD-HHmmss` when possible, falling back to the note name.
 
@@ -78,10 +78,11 @@ Store it with Obsidian SecretStorage from the plugin settings, then select that 
 
 ## Development
 
-This project uses pnpm, Node.js 24+, Rolldown for bundling, Oxlint for linting, and TypeScript for type checking.
+This project uses pnpm, Node.js 24+, Rolldown for bundling, Oxfmt for formatting, Oxlint for linting, and TypeScript for type checking.
 
 ```bash
 pnpm install
+pnpm run fmt:check
 pnpm run typecheck
 pnpm run lint
 pnpm run build

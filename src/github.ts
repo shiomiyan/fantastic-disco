@@ -1,8 +1,8 @@
-import {RequestError} from "@octokit/request-error";
-import {Octokit} from "@octokit/rest";
-import {arrayBufferToBase64, base64ToArrayBuffer} from "obsidian";
-import {isManagedImagePath} from "./markdown";
-import type {BlogPushSettings, PreparedPost, PushSummary} from "./types";
+import { RequestError } from "@octokit/request-error";
+import { Octokit } from "@octokit/rest";
+import { arrayBufferToBase64, base64ToArrayBuffer } from "obsidian";
+import { isManagedImagePath } from "./markdown";
+import type { BlogPushSettings, PreparedPost, PushSummary } from "./types";
 
 interface TreeMutation {
 	path: string;
@@ -11,260 +11,216 @@ interface TreeMutation {
 	sha: string | null;
 }
 
-export class GitHubError extends Error {
-	constructor(message: string, public readonly status?: number) {
-		super(message);
-	}
-}
+export async function pushPostToGitHub(
+	settings: BlogPushSettings,
+	token: string,
+	post: PreparedPost,
+	dryRun: boolean,
+): Promise<PushSummary> {
+	const octokit = new Octokit({
+		auth: token,
+		userAgent: "obsidian-blog-push",
+	});
+	const repo = {
+		owner: settings.owner,
+		repo: settings.repo,
+	};
 
-export class GitHubClient {
-	private readonly octokit: Octokit;
-
-	constructor(
-		private readonly settings: BlogPushSettings,
-		token: string,
-	) {
-		this.octokit = new Octokit({
-			auth: token,
-			userAgent: "obsidian-blog-push",
+	const warnings: string[] = [];
+	try {
+		const { data: compare } = await octokit.rest.repos.compareCommitsWithBasehead({
+			...repo,
+			basehead: `${settings.baseBranch}...${settings.pushBranch}`,
 		});
+		if (compare.status === "behind" || compare.status === "diverged") {
+			warnings.push(`${settings.pushBranch} is ${compare.status} ${settings.baseBranch}.`);
+		}
+	} catch (error) {
+		console.warn("Could not compare branches before blog push.", error);
 	}
 
-	async pushPost(post: PreparedPost, dryRun: boolean): Promise<PushSummary> {
-		try {
-			return await this.pushPostWithOctokit(post, dryRun);
-		} catch (error) {
-			throw normalizeGitHubError(error);
+	let initialHead = await getBranchHead(octokit, repo, settings.pushBranch, true);
+	if (!initialHead) {
+		const baseHead = await getBranchHead(octokit, repo, settings.baseBranch);
+		if (!baseHead) {
+			throw new Error(`Branch not found: ${settings.baseBranch}`);
+		}
+
+		await octokit.rest.git.createRef({
+			...repo,
+			ref: `refs/heads/${settings.pushBranch}`,
+			sha: baseHead,
+		});
+		initialHead = baseHead;
+	}
+
+	const { data: baseCommit } = await octokit.rest.git.getCommit({
+		...repo,
+		commit_sha: initialHead,
+	});
+	const { data: tree } = await octokit.rest.git.getTree({
+		...repo,
+		tree_sha: baseCommit.tree.sha,
+		recursive: "true",
+	});
+	if (tree.truncated) {
+		throw new Error("Repository tree is too large for a recursive GitHub API response.");
+	}
+
+	const existingIndex = tree.tree.find(
+		(entry) => entry.path === post.indexPath && entry.type === "blob",
+	);
+	if (existingIndex?.sha) {
+		const content = await getBlobText(octokit, repo, existingIndex.sha);
+		const idMatch = content.match(/\nid:\s*["']?([^"'\n]+)["']?\s*(?:\n|$)/);
+		if (!idMatch) {
+			throw new Error("Existing post has no readable id; refusing to overwrite.");
+		}
+		if (idMatch[1]?.trim() !== post.frontmatter.id) {
+			throw new Error("Existing post id does not match; refusing to overwrite.");
 		}
 	}
 
-	private async pushPostWithOctokit(post: PreparedPost, dryRun: boolean): Promise<PushSummary> {
-		const warnings = await this.getBranchWarnings();
-		const initialHead = await this.ensurePushBranch();
-		const baseCommit = await this.getCommit(initialHead);
-		const tree = await this.getTree(baseCommit.tree.sha);
-		const existingIndex = tree.tree.find((entry) => entry.path === post.indexPath && entry.type === "blob");
-
-		if (existingIndex?.sha) {
-			await this.assertExistingId(existingIndex.sha, post.frontmatter.id);
+	const targetAssetPaths = new Set(post.assets.map((asset) => asset.targetPath));
+	const deletedImages = tree.tree.filter((entry) => {
+		if (entry.type !== "blob" || !entry.path) {
+			return false;
 		}
-
-		const targetAssetPaths = new Set(post.assets.map((asset) => asset.targetPath));
-		const deletedImages = tree.tree.filter((entry) => {
-			if (entry.type !== "blob" || !entry.path) {
-				return false;
-			}
-			if (!isDirectChild(entry.path, post.postDirectory)) {
-				return false;
-			}
-			return isManagedImagePath(entry.path) && !targetAssetPaths.has(entry.path);
-		});
-
-		if (dryRun) {
-			return {
-				changedFiles: 1 + post.assets.length,
-				deletedImages: deletedImages.length,
-				warnings,
-				dryRun: true,
-			};
+		if (!isDirectChild(entry.path, post.postDirectory)) {
+			return false;
 		}
+		return isManagedImagePath(entry.path) && !targetAssetPaths.has(entry.path);
+	});
 
-		const mutations: TreeMutation[] = [];
-		mutations.push({
-			path: post.indexPath,
-			mode: "100644",
-			type: "blob",
-			sha: await this.createTextBlob(post.markdown),
-		});
-
-		for (const asset of post.assets) {
-			mutations.push({
-				path: asset.targetPath,
-				mode: "100644",
-				type: "blob",
-				sha: await this.createBinaryBlob(asset.data),
-			});
-		}
-
-		for (const image of deletedImages) {
-			if (image.path) {
-				mutations.push({
-					path: image.path,
-					mode: "100644",
-					type: "blob",
-					sha: null,
-				});
-			}
-		}
-
-		const latestHead = await this.getBranchHead(this.settings.pushBranch);
-		if (latestHead !== initialHead) {
-			throw new GitHubError("Push branch changed while preparing the commit. Retry after pulling the latest branch state.");
-		}
-
-		const newTreeSha = await this.createTree(baseCommit.tree.sha, mutations);
-		const commit = await this.createCommit(`Update post from Obsidian: ${post.frontmatter.title}`, newTreeSha, initialHead);
-		await this.updateRef(this.settings.pushBranch, commit.sha);
-
+	if (dryRun) {
 		return {
-			commitSha: commit.sha,
-			commitUrl: commit.html_url,
 			changedFiles: 1 + post.assets.length,
 			deletedImages: deletedImages.length,
 			warnings,
-			dryRun: false,
+			dryRun: true,
 		};
 	}
 
-	private async ensurePushBranch(): Promise<string> {
-		const existing = await this.getBranchHead(this.settings.pushBranch, true);
-		if (existing) {
-			return existing;
-		}
+	const mutations: TreeMutation[] = [
+		{
+			path: post.indexPath,
+			mode: "100644",
+			type: "blob",
+			sha: await createTextBlob(octokit, repo, post.markdown),
+		},
+	];
 
-		const baseHead = await this.getRequiredBranchHead(this.settings.baseBranch);
-		await this.octokit.rest.git.createRef({
-			...this.repoParams(),
-			ref: `refs/heads/${this.settings.pushBranch}`,
-			sha: baseHead,
+	for (const asset of post.assets) {
+		mutations.push({
+			path: asset.targetPath,
+			mode: "100644",
+			type: "blob",
+			sha: await createBlob(octokit, repo, arrayBufferToBase64(asset.data)),
 		});
-		return baseHead;
 	}
 
-	private async getBranchWarnings(): Promise<string[]> {
-		try {
-			const {data: compare} = await this.octokit.rest.repos.compareCommitsWithBasehead({
-				...this.repoParams(),
-				basehead: `${this.settings.baseBranch}...${this.settings.pushBranch}`,
+	for (const image of deletedImages) {
+		if (image.path) {
+			mutations.push({
+				path: image.path,
+				mode: "100644",
+				type: "blob",
+				sha: null,
 			});
-			if (compare.status === "behind" || compare.status === "diverged") {
-				return [`${this.settings.pushBranch} is ${compare.status} ${this.settings.baseBranch}.`];
-			}
-		} catch (error) {
-			console.warn("Could not compare branches before blog push.", error);
-		}
-		return [];
-	}
-
-	private async assertExistingId(blobSha: string, expectedId: string): Promise<void> {
-		const content = await this.getBlobText(blobSha);
-		const idMatch = content.match(/\nid:\s*["']?([^"'\n]+)["']?\s*(?:\n|$)/);
-		if (!idMatch) {
-			throw new GitHubError("Existing post has no readable id; refusing to overwrite.");
-		}
-		const existingId = idMatch[1]?.trim();
-		if (existingId !== expectedId) {
-			throw new GitHubError("Existing post id does not match; refusing to overwrite.");
 		}
 	}
 
-	private async getBranchHead(branch: string, optional = false): Promise<string | null> {
-		try {
-			const {data: ref} = await this.octokit.rest.git.getRef({
-				...this.repoParams(),
-				ref: `heads/${branch}`,
-			});
-			return ref.object.sha;
-		} catch (error) {
-			if (optional && error instanceof RequestError && error.status === 404) {
-				return null;
-			}
-			throw error;
-		}
+	const latestHead = await getBranchHead(octokit, repo, settings.pushBranch);
+	if (latestHead !== initialHead) {
+		throw new Error(
+			"Push branch changed while preparing the commit. Retry after pulling the latest branch state.",
+		);
 	}
 
-	private async getRequiredBranchHead(branch: string): Promise<string> {
-		const head = await this.getBranchHead(branch);
-		if (!head) {
-			throw new GitHubError(`Branch not found: ${branch}`);
-		}
-		return head;
-	}
+	const { data: newTree } = await octokit.rest.git.createTree({
+		...repo,
+		base_tree: baseCommit.tree.sha,
+		tree: mutations,
+	});
+	const { data: commit } = await octokit.rest.git.createCommit({
+		...repo,
+		message: `Update post from Obsidian: ${post.frontmatter.title}`,
+		tree: newTree.sha,
+		parents: [initialHead],
+	});
+	await octokit.rest.git.updateRef({
+		...repo,
+		ref: `heads/${settings.pushBranch}`,
+		sha: commit.sha,
+		force: false,
+	});
 
-	private async getCommit(sha: string) {
-		const {data} = await this.octokit.rest.git.getCommit({
-			...this.repoParams(),
-			commit_sha: sha,
-		});
-		return data;
-	}
+	return {
+		commitSha: commit.sha,
+		commitUrl: commit.html_url,
+		changedFiles: 1 + post.assets.length,
+		deletedImages: deletedImages.length,
+		warnings,
+		dryRun: false,
+	};
+}
 
-	private async getTree(treeSha: string) {
-		const {data} = await this.octokit.rest.git.getTree({
-			...this.repoParams(),
-			tree_sha: treeSha,
-			recursive: "true",
-		});
-		if (data.truncated) {
-			throw new GitHubError("Repository tree is too large for a recursive GitHub API response.");
-		}
-		return data;
-	}
-
-	private async getBlobText(blobSha: string): Promise<string> {
-		const {data: blob} = await this.octokit.rest.git.getBlob({
-			...this.repoParams(),
-			file_sha: blobSha,
-		});
-		if (blob.encoding !== "base64") {
-			throw new GitHubError(`Unsupported blob encoding: ${blob.encoding}`);
-		}
-		const normalized = blob.content.replace(/\s/g, "");
-		return new TextDecoder().decode(base64ToArrayBuffer(normalized));
-	}
-
-	private async createTextBlob(content: string): Promise<string> {
-		const data = new TextEncoder().encode(content);
-		return this.createBlob(arrayBufferToBase64(data.buffer));
-	}
-
-	private async createBinaryBlob(data: ArrayBuffer): Promise<string> {
-		return this.createBlob(arrayBufferToBase64(data));
-	}
-
-	private async createBlob(content: string): Promise<string> {
-		const {data: blob} = await this.octokit.rest.git.createBlob({
-			...this.repoParams(),
-			content,
-			encoding: "base64",
-		});
-		return blob.sha;
-	}
-
-	private async createTree(baseTree: string, tree: TreeMutation[]): Promise<string> {
-		const {data} = await this.octokit.rest.git.createTree({
-			...this.repoParams(),
-			base_tree: baseTree,
-			tree,
-		});
-		return data.sha;
-	}
-
-	private async createCommit(message: string, tree: string, parent: string) {
-		const {data} = await this.octokit.rest.git.createCommit({
-			...this.repoParams(),
-			message,
-			tree,
-			parents: [parent],
-		});
-		return data;
-	}
-
-	private async updateRef(branch: string, sha: string): Promise<void> {
-		await this.octokit.rest.git.updateRef({
-			...this.repoParams(),
+async function getBranchHead(
+	octokit: Octokit,
+	repo: { owner: string; repo: string },
+	branch: string,
+	optional = false,
+): Promise<string | null> {
+	try {
+		const { data: ref } = await octokit.rest.git.getRef({
+			...repo,
 			ref: `heads/${branch}`,
-			sha,
-			force: false,
 		});
+		return ref.object.sha;
+	} catch (error) {
+		if (optional && error instanceof RequestError && error.status === 404) {
+			return null;
+		}
+		throw error;
 	}
+}
 
-	private repoParams(): {owner: string; repo: string} {
-		return {
-			owner: this.settings.owner,
-			repo: this.settings.repo,
-		};
+async function getBlobText(
+	octokit: Octokit,
+	repo: { owner: string; repo: string },
+	blobSha: string,
+): Promise<string> {
+	const { data: blob } = await octokit.rest.git.getBlob({
+		...repo,
+		file_sha: blobSha,
+	});
+	if (blob.encoding !== "base64") {
+		throw new Error(`Unsupported blob encoding: ${blob.encoding}`);
 	}
+	const normalized = blob.content.replace(/\s/g, "");
+	return new TextDecoder().decode(base64ToArrayBuffer(normalized));
+}
+
+async function createTextBlob(
+	octokit: Octokit,
+	repo: { owner: string; repo: string },
+	content: string,
+): Promise<string> {
+	const data = new TextEncoder().encode(content);
+	return createBlob(octokit, repo, arrayBufferToBase64(data.buffer));
+}
+
+async function createBlob(
+	octokit: Octokit,
+	repo: { owner: string; repo: string },
+	content: string,
+): Promise<string> {
+	const { data: blob } = await octokit.rest.git.createBlob({
+		...repo,
+		content,
+		encoding: "base64",
+	});
+	return blob.sha;
 }
 
 function isDirectChild(path: string, directory: string): boolean {
@@ -272,17 +228,4 @@ function isDirectChild(path: string, directory: string): boolean {
 		return false;
 	}
 	return !path.slice(directory.length + 1).includes("/");
-}
-
-function normalizeGitHubError(error: unknown): Error {
-	if (error instanceof GitHubError) {
-		return error;
-	}
-	if (error instanceof RequestError) {
-		return new GitHubError(error.message, error.status);
-	}
-	if (error instanceof Error) {
-		return error;
-	}
-	return new Error(String(error));
 }
