@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-blog-push",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Push Obsidian notes to a GitHub-backed Astro blog.",
 	"main": "main.js",
 	"type": "module",
