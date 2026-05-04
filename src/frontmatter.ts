@@ -1,5 +1,5 @@
 import {parseYaml, stringifyYaml} from "obsidian";
-import {BlogFrontmatter, BlogPostContent} from "./types";
+import type {BlogFrontmatter, BlogPostContent} from "./types";
 
 const REQUIRED_KEYS = [
 	"title",

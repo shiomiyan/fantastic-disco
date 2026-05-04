@@ -75,3 +75,22 @@ Non-image wiki links such as `[[Other note]]` stop the push.
 Create a fine-grained PAT scoped to the target repository with **Contents: Read and write**.
 
 Store it with Obsidian SecretStorage from the plugin settings, then select that secret for GitHub requests.
+
+## Development
+
+This project uses pnpm, Node.js 24+, Rolldown for bundling, Oxlint for linting, and TypeScript for type checking.
+
+```bash
+pnpm install
+pnpm run typecheck
+pnpm run lint
+pnpm run build
+```
+
+Use watch mode while developing:
+
+```bash
+pnpm run dev
+```
+
+Release artifacts are emitted at the plugin root as `main.js`, `manifest.json`, and `styles.css`.

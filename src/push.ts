@@ -2,13 +2,9 @@ import {App, MarkdownView, Notice, normalizePath, TFile} from "obsidian";
 import {parsePostContent, buildBlogMarkdown} from "./frontmatter";
 import {GitHubClient} from "./github";
 import {prepareMarkdownBody} from "./markdown";
-import {BlogPushSettings, PreparedPost, PushSummary} from "./types";
+import type {BlogPushSettings, PreparedPost, PushSummary} from "./types";
 
-export class BlogPushError extends Error {
-	constructor(message: string) {
-		super(message);
-	}
-}
+export class BlogPushError extends Error {}
 
 export async function pushCurrentNote(
 	app: App,

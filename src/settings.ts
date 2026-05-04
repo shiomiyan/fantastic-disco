@@ -1,6 +1,6 @@
 import {App, PluginSettingTab, SecretComponent, Setting} from "obsidian";
 import BlogPushPlugin from "./main";
-import {BlogPushSettings} from "./types";
+import type {BlogPushSettings} from "./types";
 
 export const DEFAULT_SETTINGS: BlogPushSettings = {
 	githubTokenSecret: "",

@@ -2,7 +2,7 @@ import {MarkdownView, Notice, Plugin, TFile} from "obsidian";
 import {fillPostMetadata} from "./frontmatter";
 import {BlogPushSettingTab, DEFAULT_SETTINGS} from "./settings";
 import {pushCurrentNote, summarizeSuccess, notifyWarnings} from "./push";
-import {BlogPushSettings} from "./types";
+import type {BlogPushSettings} from "./types";
 
 export default class BlogPushPlugin extends Plugin {
 	settings!: BlogPushSettings;

@@ -1,5 +1,5 @@
 import {App, normalizePath, TFile} from "obsidian";
-import {PreparedAsset} from "./types";
+import type {PreparedAsset} from "./types";
 
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "avif", "svg"]);
 const MAX_ASSET_SIZE = 5 * 1024 * 1024;
