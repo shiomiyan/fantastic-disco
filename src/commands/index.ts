@@ -1,10 +1,14 @@
 import { runFillMetadata } from "./fill-metadata";
 import { runPushCurrentNote } from "./push-current-note";
+import { runPullCurrentNote } from "./pull-current-note";
 import type BlogPushPlugin from "../main";
 
 export function registerCommands(plugin: BlogPushPlugin): void {
 	const pushState = {
 		isPushing: false,
+	};
+	const pullState = {
+		isPulling: false,
 	};
 
 	plugin.addCommand({
@@ -28,6 +32,22 @@ export function registerCommands(plugin: BlogPushPlugin): void {
 		name: "Dry run push current note to blog",
 		callback: () => {
 			void runPushCurrentNote(plugin, pushState, true);
+		},
+	});
+
+	plugin.addCommand({
+		id: "pull-current-note-from-blog",
+		name: "Pull current note from blog",
+		callback: () => {
+			void runPullCurrentNote(plugin, pullState, false);
+		},
+	});
+
+	plugin.addCommand({
+		id: "dry-run-pull-current-note-from-blog",
+		name: "Dry run pull current note from blog",
+		callback: () => {
+			void runPullCurrentNote(plugin, pullState, true);
 		},
 	});
 }
