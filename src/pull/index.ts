@@ -1,6 +1,7 @@
 import { App, MarkdownView, Notice, TFile } from "obsidian";
 import { parsePostContent } from "../frontmatter";
 import { fetchPostFromGitHub } from "../github";
+import { loadRequiredSecret } from "../secrets";
 import type { BlogPushSettings, PullSummary } from "../types";
 
 export class BlogPullError extends Error {}
@@ -14,7 +15,7 @@ export async function pullCurrentNote(
 	const source = await app.vault.read(file);
 	const post = parsePostContent(source);
 	const indexPath = `${settings.postsDirectory}/${post.frontmatter.slug}/index.md`;
-	const token = await loadGitHubToken(app, settings.githubTokenSecret);
+	const token = loadRequiredSecret(app, settings.githubTokenSecret);
 	const remoteMarkdown = await fetchPostFromGitHub(settings, token, indexPath);
 
 	if (dryRun) {
@@ -50,18 +51,6 @@ function getActiveMarkdownFile(app: App): TFile {
 		throw new BlogPullError("Open a Markdown note before pulling from blog.");
 	}
 	return file;
-}
-
-async function loadGitHubToken(app: App, secretName: string): Promise<string> {
-	if (!secretName.trim()) {
-		throw new BlogPullError("Set a GitHub token secret in plugin settings.");
-	}
-
-	const token = app.secretStorage.getSecret(secretName);
-	if (!token) {
-		throw new BlogPullError("GitHub token secret is empty or missing.");
-	}
-	return token;
 }
 
 async function backupCurrentFile(app: App, file: TFile, source: string): Promise<void> {
