@@ -1,6 +1,7 @@
 import { App, MarkdownView, Notice, normalizePath, TFile } from "obsidian";
 import { parsePostContent, buildBlogMarkdown } from "../frontmatter";
 import { pushPostToGitHub } from "../github";
+import { loadGithubToken } from "../secrets";
 import { prepareMarkdownBody } from "../markdown";
 import type { BlogPushSettings, PreparedPost, PushSummary } from "../types";
 
@@ -28,7 +29,7 @@ export async function pushCurrentNote(
 		assets: preparedBody.assets,
 	};
 
-	const token = await loadGitHubToken(app, settings.githubTokenSecret);
+	const token = loadGithubToken(app, settings.githubTokenSecret);
 	return pushPostToGitHub(settings, token, preparedPost, dryRun);
 }
 
@@ -54,18 +55,6 @@ function getActiveMarkdownFile(app: App): TFile {
 		throw new BlogPushError("Open a Markdown note before pushing to blog.");
 	}
 	return file;
-}
-
-async function loadGitHubToken(app: App, secretName: string): Promise<string> {
-	if (!secretName.trim()) {
-		throw new BlogPushError("Set a GitHub token secret in plugin settings.");
-	}
-
-	const token = app.secretStorage.getSecret(secretName);
-	if (!token) {
-		throw new BlogPushError("GitHub token secret is empty or missing.");
-	}
-	return token;
 }
 
 function ensureTrailingNewline(value: string): string {
