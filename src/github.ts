@@ -229,3 +229,28 @@ function isDirectChild(path: string, directory: string): boolean {
 	}
 	return !path.slice(directory.length + 1).includes("/");
 }
+
+
+export async function fetchPostFromGitHub(
+	settings: BlogPushSettings,
+	token: string,
+	indexPath: string,
+): Promise<string> {
+	const octokit = new Octokit({
+		auth: token,
+		userAgent: "obsidian-blog-push",
+	});
+	const { data } = await octokit.rest.repos.getContent({
+		owner: settings.owner,
+		repo: settings.repo,
+		path: indexPath,
+		ref: settings.pushBranch,
+	});
+
+	if (Array.isArray(data) || data.type !== "file" || !data.content) {
+		throw new Error(`Remote post is not a file: ${indexPath}`);
+	}
+
+	const normalized = data.content.replace(/\s/g, "");
+	return new TextDecoder().decode(base64ToArrayBuffer(normalized));
+}

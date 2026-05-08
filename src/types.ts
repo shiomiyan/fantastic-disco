@@ -49,3 +49,9 @@ export interface PushSummary {
 	warnings: string[];
 	dryRun: boolean;
 }
+
+export interface PullSummary {
+	updated: boolean;
+	indexPath: string;
+	dryRun: boolean;
+}
