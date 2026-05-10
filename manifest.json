@@ -1,7 +1,7 @@
 {
 	"id": "blogger",
 	"name": "Blogger",
-	"version": "1.0.8",
+	"version": "1.0.9",
 	"minAppVersion": "1.11.4",
 	"description": "Push the current Obsidian note to a GitHub-backed Astro blog branch.",
 	"author": "shiomiyan",
