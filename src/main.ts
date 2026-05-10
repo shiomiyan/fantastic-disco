@@ -1,8 +1,7 @@
 import { Plugin } from "obsidian";
 import { registerCommands } from "./commands";
-import { DEFAULT_SETTINGS } from "./settings";
+import { normalizeSettings, type BlogPushSettings } from "./settings";
 import { BlogPushSettingTab } from "./ui/settings-tab";
-import type { BlogPushSettings } from "./types";
 
 export default class BlogPushPlugin extends Plugin {
 	settings!: BlogPushSettings;
@@ -22,11 +21,7 @@ export default class BlogPushPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<BlogPushSettings>,
-		);
+		this.settings = normalizeSettings(await this.loadData());
 	}
 
 	async saveSettings() {

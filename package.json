@@ -29,6 +29,7 @@
 	"dependencies": {
 		"@octokit/request-error": "^7.1.0",
 		"@octokit/rest": "^22.0.1",
-		"obsidian": "1.12.3"
+		"obsidian": "1.12.3",
+		"zod": "^4.4.3"
 	}
 }

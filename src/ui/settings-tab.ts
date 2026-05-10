@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, SecretComponent, Setting } from "obsidian";
 import type BlogPushPlugin from "../main";
-import type { BlogPushSettings } from "../types";
+import type { BlogPushSettings } from "../settings";
 
 export class BlogPushSettingTab extends PluginSettingTab {
 	plugin: BlogPushPlugin;

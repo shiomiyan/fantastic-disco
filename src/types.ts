@@ -1,22 +1,4 @@
-export interface BlogPushSettings {
-	githubTokenSecret: string;
-	owner: string;
-	repo: string;
-	pushBranch: string;
-	baseBranch: string;
-	postsDirectory: string;
-}
-
-export interface BlogFrontmatter {
-	title: string;
-	description: string;
-	created: string;
-	draft: boolean;
-	id: string;
-	categories: string[];
-	tags: string[];
-	slug: string;
-}
+import type { BlogFrontmatter } from "./frontmatter/schema";
 
 export interface BlogPostContent {
 	frontmatter: BlogFrontmatter;

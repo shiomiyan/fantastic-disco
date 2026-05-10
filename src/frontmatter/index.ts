@@ -1,34 +1,17 @@
 import { getFrontMatterInfo, parseYaml, stringifyYaml } from "obsidian";
-import {
-	FrontmatterError,
-	REQUIRED_FRONTMATTER_KEYS,
-	validateFrontmatter,
-	type RequiredFrontmatterKey,
-} from "./validation";
+import { validateFrontmatter } from "./schema";
 import type { BlogPostContent } from "../types";
 
 export { fillPostMetadata, type FilledPostMetadata } from "./metadata";
-export { FrontmatterError } from "./validation";
 
 export function parsePostContent(source: string): BlogPostContent {
 	const info = getFrontMatterInfo(source);
 	if (!info.exists) {
-		throw new FrontmatterError("Missing frontmatter.", [...REQUIRED_FRONTMATTER_KEYS]);
+		throw new Error("Missing frontmatter.");
 	}
 
 	const body = source.slice(info.contentStart);
-	const parsed = parseYaml(info.frontmatter) as Partial<
-		Record<RequiredFrontmatterKey, unknown>
-	> | null;
-	const data = parsed ?? {};
-	const missing = REQUIRED_FRONTMATTER_KEYS.filter(
-		(key) => data[key] === undefined || data[key] === null,
-	);
-	if (missing.length > 0) {
-		throw new FrontmatterError(`Missing frontmatter: ${missing.join(", ")}`, missing);
-	}
-
-	const frontmatter = validateFrontmatter(data);
+	const frontmatter = validateFrontmatter(parseYaml(info.frontmatter));
 	return {
 		frontmatter,
 		body,

@@ -3,7 +3,8 @@ import { parsePostContent, buildBlogMarkdown } from "../frontmatter";
 import { pushPostToGitHub } from "../github";
 import { loadGithubToken } from "../secrets";
 import { prepareMarkdownBody } from "../markdown";
-import type { BlogPushSettings, PreparedPost, PushSummary } from "../types";
+import type { BlogPushSettings } from "../settings";
+import type { PreparedPost, PushSummary } from "../types";
 
 export class BlogPushError extends Error {}
 

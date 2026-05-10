@@ -2,7 +2,8 @@ import { RequestError } from "@octokit/request-error";
 import { Octokit } from "@octokit/rest";
 import { arrayBufferToBase64, base64ToArrayBuffer } from "obsidian";
 import { isManagedImagePath } from "./markdown";
-import type { BlogPushSettings, PreparedPost, PushSummary } from "./types";
+import type { BlogPushSettings } from "./settings";
+import type { PreparedPost, PushSummary } from "./types";
 
 interface TreeMutation {
 	path: string;

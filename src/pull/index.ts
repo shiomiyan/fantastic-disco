@@ -2,7 +2,8 @@ import { App, MarkdownView, Notice, TFile } from "obsidian";
 import { parsePostContent } from "../frontmatter";
 import { fetchPostFromGitHub } from "../github";
 import { loadGithubToken } from "../secrets";
-import type { BlogPushSettings, PullSummary } from "../types";
+import type { BlogPushSettings } from "../settings";
+import type { PullSummary } from "../types";
 
 export class BlogPullError extends Error {}
 
