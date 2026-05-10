@@ -20,7 +20,7 @@ export async function pushPostToGitHub(
 ): Promise<PushSummary> {
 	const octokit = new Octokit({
 		auth: token,
-		userAgent: "obsidian-blog-push",
+		userAgent: "blogger",
 	});
 	const repo = {
 		owner: settings.owner,
@@ -37,7 +37,7 @@ export async function pushPostToGitHub(
 			warnings.push(`${settings.pushBranch} is ${compare.status} ${settings.baseBranch}.`);
 		}
 	} catch (error) {
-		console.warn("Could not compare branches before blog push.", error);
+		console.warn("Could not compare branches before blog repository push.", error);
 	}
 
 	let initialHead = await getBranchHead(octokit, repo, settings.pushBranch, true);
@@ -239,7 +239,7 @@ export async function fetchPostFromGitHub(
 ): Promise<string> {
 	const octokit = new Octokit({
 		auth: token,
-		userAgent: "obsidian-blog-push",
+		userAgent: "blogger",
 	});
 	const { data } = await octokit.rest.repos.getContent({
 		owner: settings.owner,

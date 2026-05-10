@@ -1,11 +1,14 @@
 import { App, TFile } from "obsidian";
 
-export interface FilledPostMetadata {
+export interface FillFrontmatterResult {
 	generatedId: string | null;
 	generatedSlug: string | null;
 }
 
-export async function fillPostMetadata(app: App, file: TFile): Promise<FilledPostMetadata> {
+export async function fillFrontmatter(
+	app: App,
+	file: TFile,
+): Promise<FillFrontmatterResult> {
 	const generatedId = crypto.randomUUID();
 	let generatedSlug: string | null = null;
 	let filledId: string | null = null;

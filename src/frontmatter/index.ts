@@ -2,7 +2,7 @@ import { getFrontMatterInfo, parseYaml, stringifyYaml } from "obsidian";
 import { validateFrontmatter } from "./schema";
 import type { BlogPostContent } from "../types";
 
-export { fillPostMetadata, type FilledPostMetadata } from "./metadata";
+export { fillFrontmatter, type FillFrontmatterResult } from "./fill";
 
 export function parsePostContent(source: string): BlogPostContent {
 	const info = getFrontMatterInfo(source);

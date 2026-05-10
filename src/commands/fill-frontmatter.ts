@@ -1,16 +1,16 @@
 import { MarkdownView, Notice, TFile } from "obsidian";
-import { fillPostMetadata } from "../frontmatter";
+import { fillFrontmatter } from "../frontmatter";
 import type BlogPushPlugin from "../main";
 
-export async function runFillMetadata(plugin: BlogPushPlugin): Promise<void> {
+export async function runFillFrontmatter(plugin: BlogPushPlugin): Promise<void> {
 	try {
 		const file = getActiveMarkdownFile(
 			plugin,
-			"Open a Markdown note before filling blog metadata.",
+			"Open a Markdown note before filling frontmatter.",
 		);
-		const result = await fillPostMetadata(plugin.app, file);
+		const result = await fillFrontmatter(plugin.app, file);
 		if (!result.generatedId && !result.generatedSlug) {
-			new Notice("Blog ID and slug are already set.");
+			new Notice("Frontmatter ID and slug are already set.");
 			return;
 		}
 
@@ -18,11 +18,11 @@ export async function runFillMetadata(plugin: BlogPushPlugin): Promise<void> {
 			result.generatedId ? "id" : null,
 			result.generatedSlug ? "slug" : null,
 		].filter((value): value is string => value !== null);
-		new Notice(`Filled blog ${generated.join(" and ")}.`);
+		new Notice(`Filled frontmatter ${generated.join(" and ")}.`);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		console.error("Blog metadata fill failed.", error);
-		new Notice(`Blog metadata fill failed: ${message}`, 10000);
+		console.error("Frontmatter fill failed.", error);
+		new Notice(`Frontmatter fill failed: ${message}`, 10000);
 	}
 }
 

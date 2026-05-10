@@ -1,4 +1,4 @@
-import { runFillMetadata } from "./fill-metadata";
+import { runFillFrontmatter } from "./fill-frontmatter";
 import { runPushCurrentNote } from "./push-current-note";
 import { runPullCurrentNote } from "./pull-current-note";
 import type BlogPushPlugin from "../main";
@@ -12,40 +12,40 @@ export function registerCommands(plugin: BlogPushPlugin): void {
 	};
 
 	plugin.addCommand({
-		id: "fill-current-note-blog-metadata",
-		name: "Fill current note blog ID and slug",
+		id: "fill-current-note-frontmatter",
+		name: "Fill current note frontmatter",
 		callback: () => {
-			void runFillMetadata(plugin);
+			void runFillFrontmatter(plugin);
 		},
 	});
 
 	plugin.addCommand({
-		id: "push-current-note-to-blog",
-		name: "Push current note to blog",
+		id: "push-current-note-to-blog-repository",
+		name: "Push current note to blog repository",
 		callback: () => {
 			void runPushCurrentNote(plugin, pushState, false);
 		},
 	});
 
 	plugin.addCommand({
-		id: "dry-run-push-current-note-to-blog",
-		name: "Dry run push current note to blog",
+		id: "dry-run-push-current-note-to-blog-repository",
+		name: "Dry run push current note to blog repository",
 		callback: () => {
 			void runPushCurrentNote(plugin, pushState, true);
 		},
 	});
 
 	plugin.addCommand({
-		id: "pull-current-note-from-blog",
-		name: "Pull current note from blog",
+		id: "pull-current-note-from-blog-repository",
+		name: "Pull current note from blog repository",
 		callback: () => {
 			void runPullCurrentNote(plugin, pullState, false);
 		},
 	});
 
 	plugin.addCommand({
-		id: "dry-run-pull-current-note-from-blog",
-		name: "Dry run pull current note from blog",
+		id: "dry-run-pull-current-note-from-blog-repository",
+		name: "Dry run pull current note from blog repository",
 		callback: () => {
 			void runPullCurrentNote(plugin, pullState, true);
 		},

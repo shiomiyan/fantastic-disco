@@ -1,6 +1,6 @@
-# Blog Push
+# Blogger
 
-Blog Push is an Obsidian plugin for pushing the current Markdown note to `shiomiyan/blog` through the GitHub Git Data API.
+Blogger is an Obsidian plugin for pushing the current Markdown note to `shiomiyan/blog` through the GitHub Git Data API.
 
 It creates one Git commit on the configured push branch. The default target is:
 
@@ -33,7 +33,7 @@ slug: 20260426-161530
 src/content/posts/<slug>/index.md
 ```
 
-The pushed Markdown frontmatter keeps only the keys required by the blog schema. Obsidian-only metadata is not sent.
+Only the frontmatter keys required by the blog schema are sent.
 
 ## Commands
 
@@ -41,11 +41,11 @@ Use these commands from the Obsidian command palette:
 
 | Command                                | ID                                  | Description                                                                                                                                              |
 | -------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Fill current note blog ID and slug** | `fill-current-note-blog-metadata`   | Add missing or empty `id` and `slug` fields to the active Markdown note.                                                                                 |
-| **Push current note to blog**          | `push-current-note-to-blog`         | Validate the active Markdown note, resolve images, and push the post to the configured GitHub repository.                                                |
-| **Dry run push current note to blog**  | `dry-run-push-current-note-to-blog` | Validate the active Markdown note, resolve images, check the GitHub branch and existing post ID, and report what would change without creating a commit. |
-| **Pull current note from blog**        | `pull-current-note-from-blog`        | Force pull the remote post for the note slug from the push branch and overwrite the local note content after creating a `.bak` backup.              |
-| **Dry run pull current note from blog**| `dry-run-pull-current-note-from-blog`| Check whether force pull would overwrite the local note and report the remote `index.md` path without changing the note.                              |
+| **Fill current note frontmatter** | `fill-current-note-frontmatter` | Add missing or empty `id` and `slug` fields to the active Markdown note frontmatter. |
+| **Push current note to blog repository** | `push-current-note-to-blog-repository` | Validate the active Markdown note, resolve images, and push the post to the configured blog repository. |
+| **Dry run push current note to blog repository** | `dry-run-push-current-note-to-blog-repository` | Validate the active Markdown note, resolve images, check the GitHub branch and existing post ID, and report what would change without creating a commit. |
+| **Pull current note from blog repository** | `pull-current-note-from-blog-repository` | Force pull the remote post for the note slug from the push branch and overwrite the local note content after creating a `.bak` backup. |
+| **Dry run pull current note from blog repository** | `dry-run-pull-current-note-from-blog-repository` | Check whether force pull would overwrite the local note and report the remote `index.md` path without changing the note. |
 
 The fill command keeps existing values. It generates `id` as a UUID and generates `slug` from `created` as `YYYYMMDD-HHmmss` when possible, falling back to the note name.
 

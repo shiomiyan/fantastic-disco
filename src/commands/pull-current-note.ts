@@ -12,15 +12,19 @@ export async function runPullCurrentNote(
 	dryRun: boolean,
 ): Promise<void> {
 	if (state.isPulling) {
-		new Notice("Blog pull is already running.");
+		new Notice("Blog repository pull is already running.");
 		return;
 	}
 
 	state.isPulling = true;
-	plugin.setStatus(dryRun ? "Checking blog pull..." : "Pulling from blog...");
+	plugin.setStatus(
+		dryRun
+			? "Checking blog repository pull..."
+			: "Pulling from blog repository...",
+	);
 	new Notice(
 		dryRun
-			? "Preparing dry run blog pull..."
+			? "Preparing dry run blog repository pull..."
 			: "Force pull will overwrite this note with remote content.",
 	);
 
@@ -43,8 +47,8 @@ export async function runPullCurrentNote(
 		}
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
-		console.error("Blog pull failed.", error);
-		new Notice(`Blog pull failed: ${message}`, 10000);
+		console.error("Blog repository pull failed.", error);
+		new Notice(`Blog repository pull failed: ${message}`, 10000);
 	} finally {
 		state.isPulling = false;
 		plugin.clearStatus();

@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-blog-push",
+	"name": "blogger",
 	"version": "1.0.7",
 	"description": "Push Obsidian notes to a GitHub-backed Astro blog.",
 	"main": "main.js",
