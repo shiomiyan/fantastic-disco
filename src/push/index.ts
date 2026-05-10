@@ -1,5 +1,6 @@
 import { App, MarkdownView, Notice, normalizePath, TFile } from "obsidian";
 import { parsePostContent, buildBlogMarkdown } from "../frontmatter";
+import { normalizeCategoriesForBlog } from "../frontmatter/categories";
 import { pushPostToGitHub } from "../github";
 import { loadGithubToken } from "../secrets";
 import { prepareMarkdownBody } from "../markdown";
@@ -19,10 +20,23 @@ export async function pushCurrentNote(
 	const postDirectory = normalizePath(`${settings.postsDirectory}/${post.frontmatter.slug}`);
 	const indexPath = `${postDirectory}/index.md`;
 	const preparedBody = await prepareMarkdownBody(app, file, post.body, postDirectory);
-	const markdown = buildBlogMarkdown(post, ensureTrailingNewline(preparedBody.body));
+	const categories = await normalizeCategoriesForBlog(app, file, post.frontmatter.categories);
+	const markdown = buildBlogMarkdown(
+		{
+			...post,
+			frontmatter: {
+				...post.frontmatter,
+				categories,
+			},
+		},
+		ensureTrailingNewline(preparedBody.body),
+	);
 	const { slug, ...frontmatter } = post.frontmatter;
 	const preparedPost: PreparedPost = {
-		frontmatter,
+		frontmatter: {
+			...frontmatter,
+			categories,
+		},
 		slug,
 		markdown: ensureTrailingNewline(markdown),
 		postDirectory,

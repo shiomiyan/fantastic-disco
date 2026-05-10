@@ -1,5 +1,6 @@
 import { App, MarkdownView, Notice, TFile } from "obsidian";
-import { parsePostContent } from "../frontmatter";
+import { parsePostContent, readFrontmatter, replaceFrontmatter } from "../frontmatter";
+import { normalizeCategoriesForObsidian } from "../frontmatter/categories";
 import { fetchPostFromGitHub } from "../github";
 import { loadGithubToken } from "../secrets";
 import type { BlogPushSettings } from "../settings";
@@ -18,16 +19,31 @@ export async function pullCurrentNote(
 	const indexPath = `${settings.postsDirectory}/${post.frontmatter.slug}/index.md`;
 	const token = loadGithubToken(app, settings.githubTokenSecret);
 	const remoteMarkdown = await fetchPostFromGitHub(settings, token, indexPath);
+	const remoteFrontmatter = readFrontmatter(remoteMarkdown);
+	const remoteCategories = getRemoteCategoryIds(remoteFrontmatter);
+	const localCategories = await normalizeCategoriesForObsidian(
+		app,
+		file,
+		post.frontmatter.categories,
+		remoteCategories,
+	);
+	const normalizedRemoteMarkdown = ensureTrailingNewline(
+		replaceFrontmatter(remoteMarkdown, (frontmatter) => ({
+			...frontmatter,
+			slug: post.frontmatter.slug,
+			categories: localCategories,
+		})),
+	);
 
 	if (dryRun) {
 		return {
-			updated: source !== remoteMarkdown,
+			updated: source !== normalizedRemoteMarkdown,
 			indexPath,
 			dryRun: true,
 		};
 	}
 
-	if (source === remoteMarkdown) {
+	if (source === normalizedRemoteMarkdown) {
 		return {
 			updated: false,
 			indexPath,
@@ -36,7 +52,7 @@ export async function pullCurrentNote(
 	}
 
 	await backupCurrentFile(app, file, source);
-	await app.vault.modify(file, ensureTrailingNewline(remoteMarkdown));
+	await app.vault.modify(file, normalizedRemoteMarkdown);
 
 	return {
 		updated: true,
@@ -68,4 +84,12 @@ async function backupCurrentFile(app: App, file: TFile, source: string): Promise
 
 function ensureTrailingNewline(value: string): string {
 	return value.endsWith("\n") ? value : `${value}\n`;
+}
+
+function getRemoteCategoryIds(frontmatter: Record<string, unknown>): string[] {
+	const { categories } = frontmatter;
+	if (!Array.isArray(categories) || !categories.every((item) => typeof item === "string")) {
+		throw new Error('Remote frontmatter "categories" must be an array of strings.');
+	}
+	return categories;
 }
