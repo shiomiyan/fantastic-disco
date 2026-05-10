@@ -13,7 +13,7 @@ export interface BlogFrontmatter {
 	created: string;
 	draft: boolean;
 	id: string;
-	category: string;
+	categories: string[];
 	tags: string[];
 	slug: string;
 }

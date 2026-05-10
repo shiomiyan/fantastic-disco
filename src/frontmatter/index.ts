@@ -43,7 +43,7 @@ export function buildBlogMarkdown(post: BlogPostContent, body: string): string {
 		created: post.frontmatter.created,
 		draft: post.frontmatter.draft,
 		id: post.frontmatter.id,
-		category: post.frontmatter.category,
+		categories: post.frontmatter.categories,
 		tags: post.frontmatter.tags,
 	};
 

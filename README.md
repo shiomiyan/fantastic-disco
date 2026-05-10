@@ -20,7 +20,8 @@ description: ""
 created: 2026-04-26T07:15:30.000Z
 draft: true
 id: 00000000-0000-4000-8000-000000000000
-category: diary
+categories:
+  - diary
 tags: []
 slug: 20260426-161530
 ---

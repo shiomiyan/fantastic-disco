@@ -6,7 +6,7 @@ export const REQUIRED_FRONTMATTER_KEYS = [
 	"created",
 	"draft",
 	"id",
-	"category",
+	"categories",
 	"tags",
 	"slug",
 ] as const;
@@ -31,7 +31,7 @@ export function validateFrontmatter(
 	const created = requireCreated(data.created, errors);
 	const draft = requireBoolean(data.draft, "draft", errors);
 	const id = requireString(data.id, "id", errors);
-	const category = requireString(data.category, "category", errors);
+	const categories = requireStringArray(data.categories, "categories", errors);
 	const tags = requireTags(data.tags, errors);
 	const slug = requireSlug(data.slug, errors);
 
@@ -45,7 +45,7 @@ export function validateFrontmatter(
 		created,
 		draft,
 		id,
-		category,
+		categories,
 		tags,
 		slug,
 	};
@@ -99,18 +99,22 @@ function requireBoolean(value: unknown, key: string, errors: string[]): boolean 
 }
 
 function requireTags(value: unknown, errors: string[]): string[] {
+	return requireStringArray(value, "tags", errors);
+}
+
+function requireStringArray(value: unknown, key: string, errors: string[]): string[] {
 	if (!Array.isArray(value)) {
-		errors.push("tags must be an array");
+		errors.push(`${key} must be an array`);
 		return [];
 	}
 
-	const tags: string[] = [];
-	for (const tag of value) {
-		if (typeof tag !== "string") {
-			errors.push("tags must contain only strings");
+	const items: string[] = [];
+	for (const item of value) {
+		if (typeof item !== "string") {
+			errors.push(`${key} must contain only strings`);
 			continue;
 		}
-		tags.push(tag);
+		items.push(item);
 	}
-	return tags;
+	return items;
 }
