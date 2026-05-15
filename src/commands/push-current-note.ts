@@ -17,13 +17,9 @@ export async function runPushCurrentNote(
 	}
 
 	state.isPushing = true;
-	plugin.setStatus(
-		dryRun ? "Checking blog repository push..." : "Pushing to blog repository...",
-	);
+	plugin.setStatus(dryRun ? "Checking blog repository push..." : "Pushing to blog repository...");
 	new Notice(
-		dryRun
-			? "Preparing dry run blog repository push..."
-			: "Preparing blog repository push...",
+		dryRun ? "Preparing dry run blog repository push..." : "Preparing blog repository push...",
 	);
 
 	try {

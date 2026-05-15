@@ -5,10 +5,7 @@ export interface FillFrontmatterResult {
 	generatedSlug: string | null;
 }
 
-export async function fillFrontmatter(
-	app: App,
-	file: TFile,
-): Promise<FillFrontmatterResult> {
+export async function fillFrontmatter(app: App, file: TFile): Promise<FillFrontmatterResult> {
 	const generatedId = crypto.randomUUID();
 	let generatedSlug: string | null = null;
 	let filledId: string | null = null;

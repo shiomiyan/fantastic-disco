@@ -18,9 +18,7 @@ export async function runPullCurrentNote(
 
 	state.isPulling = true;
 	plugin.setStatus(
-		dryRun
-			? "Checking blog repository pull..."
-			: "Pulling from blog repository...",
+		dryRun ? "Checking blog repository pull..." : "Pulling from blog repository...",
 	);
 	new Notice(
 		dryRun

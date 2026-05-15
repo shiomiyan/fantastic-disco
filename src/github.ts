@@ -231,7 +231,6 @@ function isDirectChild(path: string, directory: string): boolean {
 	return !path.slice(directory.length + 1).includes("/");
 }
 
-
 export async function fetchPostFromGitHub(
 	settings: BlogPushSettings,
 	token: string,

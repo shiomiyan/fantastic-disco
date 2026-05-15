@@ -17,11 +17,11 @@ export class BlogPushSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("GitHub token")
 			.setDesc("Select the secret that stores your token.")
-			.then((setting) => {
-				new SecretComponent(this.app, setting.controlEl)
+			.addComponent((componentEl) => {
+				return new SecretComponent(this.app, componentEl)
 					.setValue(this.plugin.settings.githubTokenSecret)
 					.onChange((value: string) => {
-						this.plugin.settings.githubTokenSecret = value;
+						this.plugin.settings.githubTokenSecret = value.trim();
 						void this.plugin.saveSettings();
 					});
 			});
@@ -47,7 +47,12 @@ export class BlogPushSettingTab extends PluginSettingTab {
 			.setDesc(description)
 			.addText((text) =>
 				text.setValue(this.plugin.settings[key]).onChange(async (value) => {
-					this.plugin.settings[key] = value.trim();
+					const trimmedValue = value.trim();
+					if (trimmedValue === this.plugin.settings[key]) {
+						return;
+					}
+
+					this.plugin.settings[key] = trimmedValue;
 					await this.plugin.saveSettings();
 				}),
 			);
