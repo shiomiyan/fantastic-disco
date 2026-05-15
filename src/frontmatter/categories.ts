@@ -108,6 +108,10 @@ async function resolveCategoryLinkTargets(
 	const errors: string[] = [];
 
 	for (const category of categories) {
+		if (category === "[[Blog]]") {
+			continue;
+		}
+
 		try {
 			resolved.push(await resolveCategoryLinkTarget(app, sourceFile, category));
 		} catch (error) {
